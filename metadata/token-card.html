@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Token Card</title>
+  <link rel="icon" href="data:," />
+  <style>
+    :root {
+      --card-w: 320px;
+      --card-h: 520px;
+      --border-pad: 12px;
+      --corner-radius: 16px;
+      --thickness: 10px;
+      --side-color: #f59e0b; /* will be updated by tier */
+      --bg: #000;
+      --text: #fff;
+    }
+    html, body {
+      height: 100%;
+    }
+    body {
+      margin: 0;
+      background: #000; /* black BG */
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow: hidden;
+    }
+    .page {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      touch-action: none;
+    }
+    .perspective {
+      perspective: 900px;
+    }
+    .card-outer {
+      width: var(--card-w);
+      height: var(--card-h);
+      position: relative;
+      border-radius: 16px;
+      padding: var(--border-pad);
+      transform-style: preserve-3d;
+      will-change: transform;
+    }
+    .border-panel {
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      padding: var(--border-pad);
+      pointer-events: none;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: var(--corner-radius);
+      overflow: visible;
+      transform-style: preserve-3d;
+    }
+    .face {
+      position: absolute;
+      inset: 0;
+      border-radius: var(--corner-radius);
+      overflow: hidden;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .top-panel {
+      position: relative;
+      height: 58%;
+      overflow: hidden;
+    }
+    .pattern-icon {
+      position: absolute;
+      color: rgba(0,0,0,0.25);
+    }
+    .sheen {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      mix-blend-mode: screen;
+    }
+    .model-wrap {
+      position: absolute;
+      inset: 0;
+      padding: 8px;
+      pointer-events: none;
+    }
+    .model-host {
+      width: 100%;
+      height: 100%;
+      border-radius: 10px;
+      overflow: hidden;
+      background: rgba(0,0,0,0.1);
+      position: relative;
+    }
+    .rarity {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      z-index: 10;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255,255,255,0.55);
+      border-radius: 9999px;
+      padding: 0 8px;
+      height: 24px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      font-size: 12px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.25);
+      color: #fff;
+      background: linear-gradient(90deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06));
+    }
+    .number-tag {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      z-index: 10;
+      font-weight: 800;
+      letter-spacing: .2em;
+      font-size: 12px;
+      background: rgba(0,0,0,0.35);
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 6px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.5);
+    }
+    .name-row {
+      position: absolute;
+      bottom: 16px;
+      left: 0;
+      right: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .name-tag {
+      display: flex;
+      align-items: center;
+      color: #fff;
+      font-weight: 700;
+      font-size: 22px;
+      text-shadow: 0 0 1.5px rgba(255,255,255,0.9), 0 0 4px rgba(255,255,255,0.6);
+    }
+    .name-tag img { filter: drop-shadow(0 0 1.5px rgba(255,255,255,0.9)) drop-shadow(0 0 4px rgba(255,255,255,0.6)); }
+    .skin-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; margin-top: 8px; }
+
+    .stats {
+      height: 42%;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.4));
+    }
+    .stat-row { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+    .stat-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: rgba(255,255,255,0.9);
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+    .bar {
+      position: relative;
+      width: 100%;
+      height: 8px;
+      border-radius: 9999px;
+      background: rgba(255,255,255,0.15);
+      overflow: hidden;
+    }
+    .bar-fill {
+      position: absolute;
+      inset: 0;
+      border-radius: 9999px;
+      background: linear-gradient(90deg, #38bdf8, #a78bfa, #f0abfc);
+      clip-path: inset(0 0 0 0);
+      will-change: clip-path;
+    }
+
+    .back-face {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hint {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 5vh;
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    /* Helpers */
+    .abs { position: absolute; }
+    .center { left: 50%; top: 50%; transform: translate(-50%, -50%); }
+  </style>
+  <!-- Lucide icons UMD -->
+  <script src="https://unpkg.com/lucide@0.451.0/dist/umd/lucide.min.js"></script>
+  <!-- es-module-shims for wide import map support (works even if native import maps unsupported) -->
+  <script src="https://unpkg.com/es-module-shims@1.10.0/dist/es-module-shims.js"></script>
+  <!-- Import map so JSM loaders that import 'three' can resolve in the browser -->
+  <script type="importmap-shim">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/examples/jsm/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+  <!-- Three.js will be imported as an ES module at the bottom script -->
+</head>
+<body>
+  <div class="page">
+    <div class="perspective">
+      <div id="card" class="card-outer" style="transform: rotateX(-5deg) rotateY(0deg) scale(1)">
+        <!-- Front gradient border -->
+        <div id="borderFront" class="border-panel" style="opacity:1;"></div>
+        <!-- Back gradient border -->
+        <div id="borderBack" class="border-panel" style="transform: rotateY(180deg);"></div>
+
+        <div class="inner">
+          <!-- Side faces (center strips) -->
+          <div id="side-left" class="abs" style="height: calc(var(--card-h) - 2 * var(--corner-radius)); width: var(--thickness); left: 50%; top: 50%; background: var(--side-color); transform-origin: center; backface-visibility: hidden; transform: translate(-50%, -50%) rotateY(90deg) translateZ(calc(var(--card-w) / 2 + 0.2px));"></div>
+          <div id="side-right" class="abs" style="height: calc(var(--card-h) - 2 * var(--corner-radius)); width: var(--thickness); left: 50%; top: 50%; background: var(--side-color); transform-origin: center; backface-visibility: hidden; transform: translate(-50%, -50%) rotateY(-90deg) translateZ(calc(var(--card-w) / 2 + 0.2px));"></div>
+          <div id="side-top" class="abs" style="width: calc(var(--card-w) - 2 * var(--corner-radius)); height: var(--thickness); left: 50%; top: 50%; background: var(--side-color); transform-origin: center; backface-visibility: hidden; transform: translate(-50%, -50%) rotateX(-90deg) translateZ(calc(var(--card-h) / 2 + 0.2px));"></div>
+          <div id="side-bottom" class="abs" style="width: calc(var(--card-w) - 2 * var(--corner-radius)); height: var(--thickness); left: 50%; top: 50%; background: var(--side-color); transform-origin: center; backface-visibility: hidden; transform: translate(-50%, -50%) rotateX(90deg) translateZ(calc(var(--card-h) / 2 + 0.2px));"></div>
+
+          <!-- Corner slices are generated via script for accurate rounded thickness -->
+
+          <!-- Front face -->
+          <div id="front" class="face" style="transform: translateZ(calc(var(--thickness) / 2));">
+            <div id="topPanel" class="top-panel"></div>
+            <div class="stats" id="stats"></div>
+          </div>
+
+          <!-- Back face -->
+          <div id="back" class="face back-face" style="transform: rotateY(180deg) translateZ(calc(var(--thickness) / 2));">
+            <div style="position:absolute; inset:0; background: linear-gradient(135deg, #c084fc, #f43f5e);"></div>
+            <i data-lucide="gem" style="width:96px; height:96px; color:#fff; opacity:.9; filter: drop-shadow(0 8px 20px rgba(0,0,0,.5));"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hint">Drag to rotate. Press ESC to reset.</div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'https://esm.sh/three@0.160.0';
+    import { GLTFLoader } from 'https://esm.sh/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
+    console.info('TokenCard module loaded');
+    (function() {
+      try {
+      const CONFIG = {
+        animalType: 'tiger',
+        name: 'Leo',
+        gender: 'male',
+        tier: 'gold', // bronze | silver | gold | diamond | rainbow
+        tokenNumber: 99,
+        modelPath: 'animal-models/Tiger.glb',
+        textureMap: 'textures/Animals_1.png',
+        rotationSpeed: 0.0015,
+        stats: {
+          power: 86,
+          instinct: 72,
+          vitality: 90,
+          agility: 78
+        },
+        // choose any of these radial gradients
+        patternGradient: [
+          'radial-gradient(120% 120% at 50% 30%, #c7d2fe 0%, #60a5fa 55%, #0ea5e9 100%)',
+          'radial-gradient(120% 120% at 50% 30%, #f0abfc 0%, #c084fc 55%, #a855f7 100%)',
+          'radial-gradient(120% 120% at 50% 30%, #99f6e4 0%, #22d3ee 55%, #0891b2 100%)',
+          'radial-gradient(120% 120% at 50% 30%, #bbf7d0 0%, #34d399 55%, #059669 100%)',
+          'radial-gradient(120% 120% at 50% 30%, #fed7aa 0%, #fb923c 55%, #f97316 100%)',
+          'radial-gradient(120% 120% at 50% 30%, #fecdd3 0%, #fb7185 55%, #e11d48 100%)',
+          'radial-gradient(120% 120% at 50% 30%, #c7d2fe 0%, #818cf8 55%, #3730a3 100%)',
+          'radial-gradient(120% 120% at 50% 30%, #d9f99d 0%, #84cc16 55%, #65a30d 100%)',
+          'radial-gradient(120% 120% at 50% 30%, #fef08a 0%, #f59e0b 55%, #d97706 100%)',
+          'radial-gradient(120% 120% at 50% 30%, #747575 0%, #242424 55%, #000000 100%)'
+        ][Math.floor(Math.random()*10)],
+        patternIcon: 'star' // lucide icon name
+      };
+
+      function tierGradient(tier) {
+        switch (tier) {
+          case 'bronze': return 'linear-gradient(135deg, #d6a36a, #8a4b08)';
+          case 'silver': return 'linear-gradient(135deg, #e5e7eb, #9ca3af)';
+          case 'gold': return 'linear-gradient(135deg, #fde047, #f59e0b)';
+          case 'diamond': return 'linear-gradient(135deg, #a5f3fc, #a78bfa)';
+          case 'rainbow': default:
+            return 'conic-gradient(from 0deg, #f59e0b, #f43f5e, #8b5cf6, #22d3ee, #84cc16, #f59e0b)';
+        }
+      }
+      function tierSideColor(tier) {
+        switch (tier) {
+          case 'bronze': return '#c08a4d';
+          case 'silver': return '#9ca3af';
+          case 'gold': return '#f59e0b';
+          case 'diamond': return '#8b5cf6';
+          case 'rainbow': default: return '#8b5cf6';
+        }
+      }
+
+      const CARD_W = 320, CARD_H = 520, THICK = 10, RADIUS = 16;
+      const HALF_T = THICK/2;
+      document.documentElement.style.setProperty('--card-w', CARD_W+'px');
+      document.documentElement.style.setProperty('--card-h', CARD_H+'px');
+      document.documentElement.style.setProperty('--thickness', THICK+'px');
+      document.documentElement.style.setProperty('--corner-radius', RADIUS+'px');
+      document.documentElement.style.setProperty('--side-color', tierSideColor(CONFIG.tier));
+
+      // Border gradients
+      const borderFront = document.getElementById('borderFront');
+      const borderBack = document.getElementById('borderBack');
+      const grad = tierGradient(CONFIG.tier);
+      borderFront.style.backgroundImage = grad;
+      borderBack.style.backgroundImage = grad;
+
+      // Front/Back visibility depending on yaw
+      let rotX = -5, rotY = 0, scale = 1;
+      let dragging = false; let lastX = 0, lastY = 0;
+      // Predeclare sheenEl to avoid TDZ when updateCardTransform runs before it's created
+      let sheenEl = null;
+
+      const cardEl = document.getElementById('card');
+      function updateCardTransform() {
+        cardEl.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg) scale(${scale})`;
+        const y = ((rotY % 360) + 360) % 360;
+        borderFront.style.opacity = (y < 90 || y > 270) ? '1' : '0';
+        borderBack.style.opacity = (y < 90 || y > 270) ? '0' : '1';
+        // update sheen angle/intensity
+        const intensity = 0.35 + Math.abs(rotX)/80 + Math.abs(rotY)/300;
+        const angle = 45 + rotY * 0.2;
+        if (sheenEl) sheenEl.style.background = `linear-gradient(${angle}deg, rgba(255,255,255,${intensity}) 0%, rgba(255,255,255,0) 40%)`;
+      }
+
+      cardEl.addEventListener('pointerdown', (e) => {
+        dragging = true; lastX = e.clientX; lastY = e.clientY; try { cardEl.setPointerCapture(e.pointerId); } catch(e){}
+        e.preventDefault();
+      });
+      window.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        const dx = e.clientX - lastX, dy = e.clientY - lastY; lastX = e.clientX; lastY = e.clientY;
+        const yawPerPx = 0.45 / Math.max(scale, 0.7);
+        const pitchPerPx = 0.35 / Math.max(scale, 0.7);
+        rotY = Math.max(-180, Math.min(180, rotY + dx * yawPerPx));
+        rotX = Math.max(-20, Math.min(20, rotX - dy * pitchPerPx));
+        updateCardTransform();
+      });
+      window.addEventListener('pointerup', (e) => { dragging = false; try { cardEl.releasePointerCapture(e.pointerId); } catch(e){} });
+      window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { rotX = -5; rotY = 0; updateCardTransform(); } });
+
+      // Compute scale to fit viewport
+      function computeScale() {
+        const vw = window.innerWidth, vh = window.innerHeight;
+        const widthFit = (vw * 0.8) / CARD_W; const heightFit = (vh * 0.9) / CARD_H; const MAX = 1.3;
+        scale = Math.min(MAX, widthFit, heightFit); updateCardTransform();
+      }
+      window.addEventListener('resize', computeScale); computeScale();
+
+      // Build front face top panel content
+      const innerEl = document.querySelector('.inner');
+      const BORDER_PAD_PX = 12; // use existing RADIUS/THICK from above
+
+      // Build rounded corner segments to match React component
+      (function buildCorners(){
+        const CORNER_SEGMENTS = 10; // smoother corners
+        const ANGLE_STEP = Math.PI / 2 / CORNER_SEGMENTS; // 90deg / n
+        const SLICE_H = 2 * RADIUS * Math.sin(ANGLE_STEP / 2) + 0.25; // overlap to hide seams
+        const sideColor = getComputedStyle(document.documentElement).getPropertyValue('--side-color').trim() || '#9ca3af';
+
+        function makeCornerContainer(position){
+          const c = document.createElement('div');
+          c.style.position = 'absolute';
+          c.style.transformStyle = 'preserve-3d';
+          // anchor and base transform per corner
+          switch(position){
+            case 'tr':
+              c.style.right = -BORDER_PAD_PX + 'px';
+              c.style.top = -BORDER_PAD_PX + 'px';
+              c.style.transform = `rotateY(90deg) translateZ(${-RADIUS}px) translateY(${RADIUS}px) translateX(${-THICK/2}px)`;
+              break;
+            case 'br':
+              c.style.right = -BORDER_PAD_PX + 'px';
+              c.style.bottom = -BORDER_PAD_PX + 'px';
+              c.style.transform = `rotateY(90deg) rotateX(270deg) translateZ(${-RADIUS}px) translateY(${RADIUS}px) translateX(${-THICK/2}px)`;
+              break;
+            case 'bl':
+              c.style.left = -BORDER_PAD_PX + 'px';
+              c.style.bottom = -BORDER_PAD_PX + 'px';
+              c.style.transform = `rotateY(90deg) rotateX(180deg) translateZ(${-RADIUS}px) translateY(${RADIUS}px) translateX(${-THICK/2}px)`;
+              break;
+            case 'tl':
+              c.style.left = -BORDER_PAD_PX + 'px';
+              c.style.top = -BORDER_PAD_PX + 'px';
+              c.style.transform = `rotateY(90deg) rotateX(90deg) translateZ(${-RADIUS}px) translateY(${RADIUS}px) translateX(${-THICK/2}px)`;
+              break;
+          }
+
+          for (let i=0; i<CORNER_SEGMENTS; i++){
+            const angle = (i * (Math.PI / 2)) / CORNER_SEGMENTS;
+            const slice = document.createElement('div');
+            slice.style.position = 'absolute';
+            slice.style.bottom = '0';
+            slice.style.width = THICK + 'px';
+            slice.style.height = SLICE_H + 'px';
+            slice.style.background = sideColor;
+            slice.style.transformOrigin = 'bottom center';
+            slice.style.backfaceVisibility = 'hidden';
+            slice.style.webkitBackfaceVisibility = 'hidden';
+            const deg = (45 * (2 * i + 1)) / CORNER_SEGMENTS;
+            slice.style.transform = `translateZ(${RADIUS * Math.cos(angle)}px) translateY(${-RADIUS * Math.sin(angle)}px) rotateX(${deg}deg)`;
+            c.appendChild(slice);
+          }
+          return c;
+        }
+
+        innerEl.appendChild(makeCornerContainer('tr'));
+        innerEl.appendChild(makeCornerContainer('br'));
+        innerEl.appendChild(makeCornerContainer('bl'));
+        innerEl.appendChild(makeCornerContainer('tl'));
+      })();
+
+      const topPanel = document.getElementById('topPanel');
+      topPanel.style.background = CONFIG.patternGradient;
+      // pattern icons
+      const patternWrap = document.createElement('div');
+      patternWrap.style.position = 'absolute'; patternWrap.style.inset = '0'; patternWrap.style.pointerEvents = 'none';
+      const ROWS = 4, COLS = 4; const BASE = 32;
+      for (let r=0; r<ROWS; r++) {
+        for (let c=0; c<COLS; c++) {
+          const xf = (c + 0.5) / COLS; const yf = (r + 0.5) / ROWS; const edge = Math.min(xf, 1-xf, yf, 1-yf)/0.5; const scaleF = 0.55 + 0.45*edge; const size = BASE*scaleF; const rot = ((r+c)%4)*7 - 10;
+          const i = document.createElement('i'); i.setAttribute('data-lucide', CONFIG.patternIcon);
+          i.style.position='absolute'; i.style.left=(xf*100)+'%'; i.style.top=(yf*100)+'%'; i.style.transform=`translate(-50%,-50%) rotate(${rot}deg)`; i.style.width=size+'px'; i.style.height=size+'px'; i.style.color='rgba(0,0,0,0.25)';
+          patternWrap.appendChild(i);
+        }
+      }
+      topPanel.appendChild(patternWrap);
+      // sheen overlay
+      sheenEl = document.createElement('div'); sheenEl.className='sheen'; topPanel.appendChild(sheenEl);
+      // 3D model host
+      const modelWrap = document.createElement('div'); modelWrap.className='model-wrap'; topPanel.appendChild(modelWrap);
+      const modelHost = document.createElement('div'); modelHost.className='model-host'; modelWrap.appendChild(modelHost);
+
+      // rarity label
+      const rarity = document.createElement('div'); rarity.className='rarity';
+      const rarityTextMap = { C:'Common', R:'Rare', SR:'SR', SSR:'SSR', UR:'UR', L:'Limited' };
+      // We don't derive rarity from data; choose based on tier for demo
+      const rarityText = (CONFIG.tier==='gold'||CONFIG.tier==='diamond'||CONFIG.tier==='rainbow')? 'SSR' : (CONFIG.tier==='silver'?'SR':'Rare');
+      rarity.textContent = rarityText; topPanel.appendChild(rarity);
+
+      // number tag
+      const numberTag = document.createElement('div'); numberTag.className='number-tag'; numberTag.textContent = '#' + (CONFIG.tokenNumber||99); topPanel.appendChild(numberTag);
+
+      // name row
+      const nameRow = document.createElement('div'); nameRow.className='name-row'; topPanel.appendChild(nameRow);
+      const nameTag = document.createElement('div'); nameTag.className='name-tag'; nameTag.textContent = CONFIG.name || CONFIG.animalType; nameRow.appendChild(nameTag);
+      if (CONFIG.gender==='female') {
+        const img = document.createElement('img'); img.src = 'icons/sign-female.svg'; img.width=16; img.height=16; img.style.marginLeft='6px'; img.style.filter='drop-shadow(0 0 1.5px rgba(255,255,255,0.9)) drop-shadow(0 0 4px rgba(255,255,255,0.6))'; nameTag.appendChild(img);
+      } else {
+        const img = document.createElement('img'); img.src = 'icons/sign-male.svg'; img.width=16; img.height=16; img.style.marginLeft='6px'; img.style.filter='drop-shadow(0 0 1.5px rgba(255,255,255,0.9)) drop-shadow(0 0 4px rgba(255,255,255,0.6))'; nameTag.appendChild(img);
+      }
+
+      // stats
+      const statsEl = document.getElementById('stats');
+      const statDefs = [
+        { key:'power', label:'Power', icon:'swords', color:'#facc15' },
+        { key:'instinct', label:'Instinct', icon:'brain', color:'#c084fc' },
+        { key:'vitality', label:'Vitality', icon:'heart', color:'#fb7185' },
+        { key:'agility', label:'Agility', icon:'zap', color:'#2dd4bf' },
+      ];
+      statDefs.forEach((s) => {
+        const row = document.createElement('div'); row.className='stat-row';
+        const ic = document.createElement('i'); ic.setAttribute('data-lucide', s.icon); ic.style.width='20px'; ic.style.height='20px'; ic.style.color=s.color; row.appendChild(ic);
+        const col = document.createElement('div'); col.style.flex='1'; row.appendChild(col);
+        const top = document.createElement('div'); top.className='stat-label';
+        const l = document.createElement('span'); l.style.fontWeight='700'; l.textContent = s.label; top.appendChild(l);
+        const v = document.createElement('span'); v.style.fontWeight='800'; const value = CONFIG.stats[s.key] ?? Math.floor(Math.random()*50)+50; v.textContent = value + ' / 100'; top.appendChild(v);
+        col.appendChild(top);
+        const bar = document.createElement('div'); bar.className='bar';
+        const fill = document.createElement('div'); fill.className='bar-fill'; fill.style.clipPath = `inset(0 ${100 - (CONFIG.stats[s.key] ?? value)}% 0 0)`; bar.appendChild(fill);
+        col.appendChild(bar);
+        statsEl.appendChild(row);
+      });
+
+      // Render lucide icons
+      if (window.lucide && window.lucide.createIcons) { window.lucide.createIcons(); }
+
+      // Build the topPanel model scene using Three.js
+      const { innerWidth: W0, innerHeight: H0 } = window;
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(modelHost.clientWidth, modelHost.clientHeight);
+      renderer.setClearColor(0x000000, 0);
+      modelHost.appendChild(renderer.domElement);
+
+      const scene = new THREE.Scene();
+      // Orthographic camera similar to R3F setup
+      const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000);
+      camera.position.set(0, 2, 8);
+      camera.zoom = 40; camera.updateProjectionMatrix();
+      let modelWorldHeight = 0; // updated after model loads & scales
+
+      const ambient = new THREE.AmbientLight(0xffffff, 3.5); scene.add(ambient);
+      const dir1 = new THREE.DirectionalLight(0xffffff, 2); dir1.position.set(5,5,5); scene.add(dir1);
+      const dir2 = new THREE.DirectionalLight(0xf8f9ff, 1); dir2.position.set(-5,3,-5); scene.add(dir2);
+      const dir3 = new THREE.DirectionalLight(0xffffff, 1.5); dir3.position.set(0,10,0); scene.add(dir3);
+
+      const group = new THREE.Group(); scene.add(group);
+      const texLoader = new THREE.TextureLoader();
+      const texture = texLoader.load(CONFIG.textureMap);
+      if ('colorSpace' in texture) texture.colorSpace = THREE.SRGBColorSpace;
+      texture.flipY = false; texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping; texture.minFilter = THREE.LinearMipmapLinearFilter; texture.magFilter = THREE.LinearFilter; texture.anisotropy = 8;
+
+      const loader = new GLTFLoader();
+      loader.load(CONFIG.modelPath, (gltf) => {
+        const model = gltf.scene.clone();
+        model.traverse((node) => {
+          if (node.isMesh) {
+            node.material = new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true, map: texture });
+            node.castShadow = true; node.receiveShadow = true;
+          }
+        });
+
+        // Normalize size to a target dimension similar to app logic
+        const box = new THREE.Box3().setFromObject(model);
+        const size = new THREE.Vector3(); box.getSize(size);
+        const maxDimension = Math.max(size.x, size.y, size.z);
+        if (maxDimension > 0) {
+          const target = maxDimension === size.y ? (size.y > 1 ? 2.0 : 1.5) : (maxDimension === size.x ? (size.x > 1 ? 2.0 : 1.5) : (size.z > 1 ? 2.0 : 1.5));
+          const scaleFactor = target / maxDimension; model.scale.multiplyScalar(scaleFactor * 1.5);
+        }
+        model.position.set(0, 0.75, 0); model.rotation.set(0, -0.4, 0);
+        // Recompute scaled bounds and remember world height for zoom fitting
+        const boxScaled = new THREE.Box3().setFromObject(model);
+        const sizeScaled = new THREE.Vector3(); boxScaled.getSize(sizeScaled);
+        modelWorldHeight = sizeScaled.y;
+        group.add(model);
+        // First fit once model is present
+        fitZoomToModel();
+      });
+
+      function resizeRenderer() {
+        const w = Math.max(1, modelHost.clientWidth);
+        const h = Math.max(1, modelHost.clientHeight);
+        renderer.setSize(w, h, false);
+        // Match R3F: frustum is set to pixel half sizes; zoom handles scale
+        camera.left = -w / 2;
+        camera.right = w / 2;
+        camera.top = h / 2;
+        camera.bottom = -h / 2;
+        camera.updateProjectionMatrix();
+        // Refit zoom on resize to keep consistent model size
+        fitZoomToModel();
+      }
+      function fitZoomToModel() {
+        if (!modelHost) return;
+        const h = Math.max(1, modelHost.clientHeight);
+        // Desired visible world height so the model occupies ~40-45% vertical like in-app
+        // If model height is known, fit to it with a margin factor; else fall back to target world height
+        const marginFactor = 2.2; // leaves padding around the animal
+        const desiredWorldHeight = modelWorldHeight > 0 ? modelWorldHeight * marginFactor : 7.5;
+        const newZoom = h / desiredWorldHeight;
+        camera.zoom = Math.max(10, Math.min(80, newZoom));
+        camera.updateProjectionMatrix();
+      }
+      resizeRenderer();
+      const ro = new ResizeObserver(resizeRenderer); ro.observe(modelHost);
+
+      function animate() {
+        requestAnimationFrame(animate);
+        group.rotation.y += CONFIG.rotationSpeed || 0;
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      } catch (e) {
+        console.error('TokenCard error', e);
+      }
+    })();
+  </script>
+</body>
+</html>
