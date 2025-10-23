@@ -1,0 +1,10 @@
+{
+  "name": "CapsGame #1",
+  "description": "A second sample token to test base URI indexing and HTML previews.",
+  "image": "https://bitzoogit.github.io/ton-nft-collection/metadata/preview.png",
+  "animation_url": "https://bitzoogit.github.io/ton-nft-collection/metadata/token-card.html?id=1",
+  "attributes": [
+    { "trait_type": "Background", "value": "Purple" },
+    { "trait_type": "Power", "value": 12, "display_type": "number" }
+  ]
+}

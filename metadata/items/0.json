@@ -1,0 +1,10 @@
+{
+  "name": "CapsGame #0",
+  "description": "<p>This is <strong>HTML</strong> inside description to test formatting. Marketplaces may sanitize it. The visual preview should come from <em>animation_url</em>.</p>",
+  "image": "https://bitzoogit.github.io/ton-nft-collection/metadata/preview.png",
+  "animation_url": "https://bitzoogit.github.io/ton-nft-collection/metadata/token-card.html?id=0",
+  "attributes": [
+    { "trait_type": "Background", "value": "Blue" },
+    { "trait_type": "Power", "value": 7, "display_type": "number" }
+  ]
+}
