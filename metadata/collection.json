@@ -1,0 +1,10 @@
+{
+  "name": "CapsGame test 3",
+  "description": "Test collection to preview NFT HTML metadata rendering on Getgems (Testnet).",
+  "image": "https://placehold.co/1200x600/png?text=CapsGame%20Collection%20Cover",
+  "external_url": "https://example.com",
+  "attributes": [
+    { "trait_type": "Project", "value": "CapsGame" },
+    { "trait_type": "Network", "value": "TON Testnet" }
+  ]
+}
